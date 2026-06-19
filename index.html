@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Anime Corner</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: sans-serif;
+            background: #1a1a2e;
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .card {
+            text-align: center;
+            padding: 2rem 3rem;
+            background: #16213e;
+            border-radius: 12px;
+            box-shadow: 0 0 20px rgba(233, 69, 96, 0.4);
+            max-width: 500px;
+        }
+
+        h1 {
+            color: #e94560;
+        }
+
+        blockquote {
+            font-size: 1.2rem;
+            font-style: italic;
+        }
+
+        .char {
+            color: #e94560;
+            margin-top: 1rem;
+        }
+
+        button {
+            margin-top: 1.5rem;
+            padding: 0.6rem 1.2rem;
+            background: #e94560;
+            color: #fff;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #ff5773;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>Anime Corner</h1>
+        <blockquote id="quote">Loading...</blockquote>
+        <div class="char" id="char"></div>
+        <button onclick="getQuote()">New Quote</button>
+    </div>
+
+    <script>
+        async function getQuote() {
+            try {
+                const res = await fetch("http://localhost:5000/quote");
+                const data = await res.json();
+                document.getElementById("quote").textContent = '"' + data.text + '"';
+                document.getElementById("char").textContent = "— " + data.char;
+            } catch (e) {
+                document.getElementById("quote").textContent = "Could not load quote.";
+            }
+        }
+        getQuote();
+    </script>
+</body>
+
+</html>

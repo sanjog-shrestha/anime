@@ -1,0 +1,14 @@
+services:
+  web:
+    build: .
+    container_name: anime-app
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  api:
+    build: ./api
+    container_name: anime-api
+    ports:
+      - "5000:5000"
+    restart: unless-stopped
