@@ -11,6 +11,8 @@ services:
     container_name: anime-api
     expose:
       - "5000"
+    volumes:
+      - ./api/quotes.json:/data/quotes.json:ro
     restart: unless-stopped
 
   portainer:

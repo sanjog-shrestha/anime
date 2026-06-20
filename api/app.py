@@ -2,21 +2,26 @@ import json
 import random
 from http.server import BaseHTTPRequestHandler, HTTPServer
 
-QUOTES = [
-    {"text":"People's lives don't end when they die. It ends when they lose faith.", "char": "Itachi Uchiha"},
-    {"text":"If you don't take risks, you can't create a future.", "char": "Monkey D. Luffy"},
-    {"text":"A lesson without pain is meaningless.", "char": "Edward Elric"},
-    {"text":"Hard work is worthless for those that don't believe in themselves.", "char": "Naruto Uzumaki"},
-    {"text":"The world is not beautiful, therefore it is.", "char": "Kino"},
-]
+QUOTES_FILE = "/data/quotes.json"
+
+def load_quotes():
+    with open(QUOTES_FILE, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         if self.path == "/quote":
-            self.send_response(200)
-            self.send_header("Content-Type","application/json")
-            self.end_headers()
-            self.wfile.write(json.dumps(random.choice(QUOTES)).encode())
+            try:
+                quotes = load_quotes()
+                quote = random.choice(quotes)
+                self.send_response(200)
+                self.send_header("Content-Type","application/json")
+                self.end_headers()
+                self.wfile.write(json.dumps(quote).encode())
+            except Exception:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(b'{"error":"could not load quotes"}')
         else:
             self.send_response(404)
             self.end_headers()
