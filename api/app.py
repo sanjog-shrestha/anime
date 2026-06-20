@@ -22,7 +22,6 @@ def init_db():
         )
     """)
     conn.commit()
-
     # Seed from quotes.json only if the table is empty
     count = conn.execute("SELECT COUNT(*) FROM quotes").fetchone()[0]
     if count == 0 and os.path.exists(SEED_FILE):
@@ -61,6 +60,28 @@ class Handler(BaseHTTPRequestHandler):
         except Exception as e:
             self._send_json(500, {"error":"database error"})
     
+    def do_POST(self):
+        if self.path == "/quotes":
+            try:
+                length = int(self.headers.get("Content-Length", 0))
+                body = json.loads(self.rfile.read(length))
+                text = body.get("text", "").strip()
+                char = body.get("char", "").strip()
+                if not text or not char:
+                    self._send_json(400, {"error": "text and char are required"})
+                    return
+                conn = get_db()
+                conn.execute("INSERT INTO quotes (text, char) VALUES(?,?)" ,(text, char))
+                conn.commit()
+                conn.close()
+                self._send_json(201, {"text": text, "char": char})
+            except Exception as e:
+                print("POST /quotes error:", repr(e))
+                self._send_json(500, {"error": "could not save quote"})
+        else:
+            self.send_response(404)
+            self.end_headers()
+                
     def log_message(self, *args):
         pass 
     

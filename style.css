@@ -75,6 +75,35 @@ button:hover {
     font-size: 0.9rem;
 }
 
+input {
+    display: block;
+    width: 100%;
+    box-sizing: border-box;
+    margin: 0.6rem 0;
+    padding: 0.7rem 0.9rem;
+    background: #0f3460;
+    color: #fff;
+    border: 1px solid #2a4a7c;
+    border-radius: 6px;
+    font-size: 1rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input::placeholder {
+    color: #8a9bc0;
+}
+
+input:focus {
+    outline: none;
+    border-color: #e94560;
+    box-shadow: 0 0 8px rgba(233, 69, 96, 0.4);
+}
+
+#addMsg {
+    margin-top: 0.8rem;
+    color: #e94560;
+}
+
 @media (max-width: 768px) {
     .teams-grid {
         grid-template-columns: 1fr;

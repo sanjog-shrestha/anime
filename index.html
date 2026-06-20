@@ -14,6 +14,13 @@
         <div class="char" id="char"></div>
         <button onclick="getQuote()">New Quote</button>
     </div>
+    <div class="card">
+        <h2 style="margin-top: 0">Add a Quote</h2>
+        <input id="newText" type="text" placeholder="Quote text">
+        <input id="newChar" type="text" placeholder="Character">
+        <button onclick="addQuote()">Add</button>
+        <div id="addMsg"></div>
+    </div>
 
     <h2>All Quotes</h2>
     <div class="list" id="list"></div>
@@ -45,6 +52,33 @@
                 });
             } catch (e) {
                 document.getElementById("list").textContent = "Could not load quotes.";
+            }
+        }
+
+        async function addQuote() {
+            const text = document.getElementById("newText").value.trim();
+            const char = document.getElementById("newChar").value.trim();
+            const msg = document.getElementById("addMsg");
+            if (!text || !char) {
+                msg.textContent = "Please fill in both fields."
+                return;
+            }
+            try {
+                const res = await fetch("/api/quotes", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({ text, char })
+                });
+                if (!res.ok) throw new Error();
+                document.getElementById("newText").value = "";
+                document.getElementById("newChar").value = "";
+                msg.textContent = "Added!";
+                getAllQuotes();
+
+            } catch (e) {
+                msg.textContent = "Could not add quote."
             }
         }
 
