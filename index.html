@@ -4,62 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <title>Anime Corner</title>
-    <style>
-        body {
-            margin: 0;
-            font-family: sans-serif;
-            background: #1a1a2e;
-            color: #fff;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-
-        .card {
-            text-align: center;
-            padding: 2rem 3rem;
-            background: #16213e;
-            border-radius: 12px;
-            box-shadow: 0 0 20px rgba(233, 69, 96, 0.4);
-            max-width: 500px;
-        }
-
-        h1 {
-            color: #e94560;
-        }
-
-        blockquote {
-            font-size: 1.2rem;
-            font-style: italic;
-        }
-
-        .char {
-            color: #e94560;
-            margin-top: 1rem;
-        }
-
-        button {
-            margin-top: 1.5rem;
-            padding: 0.6rem 1.2rem;
-            background: #e94560;
-            color: #fff;
-            border: none;
-            border-radius: 6px;
-            cursor: pointer;
-            font-size: 1rem;
-        }
-
-        button:hover {
-            background: #ff5773;
-        }
-
-        @media (max-width: 768px) {
-            .teams-grid {
-                grid-template-columns: 1fr;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -69,6 +14,9 @@
         <div class="char" id="char"></div>
         <button onclick="getQuote()">New Quote</button>
     </div>
+
+    <h2>All Quotes</h2>
+    <div class="list" id="list"></div>
 
     <script>
         async function getQuote() {
@@ -81,7 +29,27 @@
                 document.getElementById("quote").textContent = "Could not load quote.";
             }
         }
+
+        async function getAllQuotes() {
+            try {
+                const res = await fetch("/api/quotes");
+                const data = await res.json();
+                const list = document.getElementById("list");
+                list.innerHTML = "";
+                data.forEach(q => {
+                    const div = document.createElement("div");
+                    div.className = "list-item";
+                    div.innerHTML = '<blockquote>"' + q.text + '"</blockquote>' +
+                        '<div class="char">— ' + q.char + '</div>';
+                    list.appendChild(div);
+                });
+            } catch (e) {
+                document.getElementById("list").textContent = "Could not load quotes.";
+            }
+        }
+
         getQuote();
+        getAllQuotes();
     </script>
 </body>
 

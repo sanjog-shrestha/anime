@@ -12,7 +12,7 @@ services:
     expose:
       - "5000"
     volumes:
-      - ./api/quotes.json:/data/quotes.json:ro
+      - quotes_data:/data
     restart: unless-stopped
 
   portainer:
@@ -27,3 +27,4 @@ services:
 
 volumes:
   portainer_data:
+  quotes_data:
