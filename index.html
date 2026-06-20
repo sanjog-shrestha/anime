@@ -67,7 +67,7 @@
     <script>
         async function getQuote() {
             try {
-                const res = await fetch("http://localhost:5000/quote");
+                const res = await fetch("/api/quote");
                 const data = await res.json();
                 document.getElementById("quote").textContent = '"' + data.text + '"';
                 document.getElementById("char").textContent = "— " + data.char;

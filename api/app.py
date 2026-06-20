@@ -15,7 +15,6 @@ class Handler(BaseHTTPRequestHandler):
         if self.path == "/quote":
             self.send_response(200)
             self.send_header("Content-Type","application/json")
-            self.send_header("Access-Control-Allow-Origin","*")
             self.end_headers()
             self.wfile.write(json.dumps(random.choice(QUOTES)).encode())
         else:
