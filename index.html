@@ -47,7 +47,8 @@
                     const div = document.createElement("div");
                     div.className = "list-item";
                     div.innerHTML = '<blockquote>"' + q.text + '"</blockquote>' +
-                        '<div class="char">— ' + q.char + '</div>';
+                        '<div class="char">— ' + q.char + '</div>' +
+                        '<button class="del" onclick="deleteQuote(' + q.id + ')">x</button>';
                     list.appendChild(div);
                 });
             } catch (e) {
@@ -79,6 +80,16 @@
 
             } catch (e) {
                 msg.textContent = "Could not add quote."
+            }
+        }
+
+        async function deleteQuote(id) {
+            try {
+                const res = await fetch("/api/quotes/" + id, { method: "DELETE" });
+                if (!res.ok) throw new Error();
+                getAllQuotes();
+            } catch (e) {
+                alert("Could not delete quote.");
             }
         }
 

@@ -37,7 +37,7 @@ def init_db():
 
 def fetch_all():
     conn = get_db()
-    rows = conn.execute("SELECT text, char FROM quotes").fetchall()
+    rows = conn.execute("SELECT id, text, char FROM quotes").fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -58,8 +58,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send_response(404)
                 self.end_headers()   
         except Exception as e:
-            self._send_json(500, {"error":"database error"})
-    
+            self._send_json(500, {"error":"database error"})    
     def do_POST(self):
         if self.path == "/quotes":
             try:
@@ -81,7 +80,21 @@ class Handler(BaseHTTPRequestHandler):
         else:
             self.send_response(404)
             self.end_headers()
-                
+    def do_DELETE(self):
+        if self.path.startswith("/quotes/"):
+            try:
+                quote_id = int(self.path.split("/")[-1])
+                conn = get_db()
+                conn.execute("DELETE FROM quotes WHERE id=?",(quote_id,))
+                conn.commit()
+                conn.close()
+                self._send_json(200, {"deleted": quote_id})
+            except Exception:
+                self._send_json(500, {"error":"could not delete quote"})
+        else:
+            self.send_response(404)
+            self.end_headers()
+            
     def log_message(self, *args):
         pass 
     

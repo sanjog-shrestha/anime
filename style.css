@@ -68,6 +68,7 @@ button:hover {
     padding: 1rem 1.5rem;
     border-radius: 6px;
     margin-bottom: 0.8rem;
+    position: relative;
 }
 
 .list-item .char {
@@ -103,6 +104,24 @@ input:focus {
     margin-top: 0.8rem;
     color: #e94560;
 }
+
+.del {
+    position: absolute;
+    top: 0.8rem;
+    right: 0.8rem;
+    margin: 0;
+    padding: 0.1rem 0.6rem;
+    background: transparent;
+    color: #e94560;
+    font-size: 1.3rem;
+    line-height: 1;
+}
+
+.del:hover {
+    background: #e94560;
+    color: #fff;
+}
+
 
 @media (max-width: 768px) {
     .teams-grid {
