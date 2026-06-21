@@ -23,9 +23,13 @@
     </div>
 
     <h2>All Quotes</h2>
+    <input id="search" type="text" placeholder="Search quotes or characters..." oninput="filterQuotes()">
+
     <div class="list" id="list"></div>
 
     <script>
+        let allQuotes = [];
+
         async function getQuote() {
             try {
                 const res = await fetch("/api/quote");
@@ -40,17 +44,8 @@
         async function getAllQuotes() {
             try {
                 const res = await fetch("/api/quotes");
-                const data = await res.json();
-                const list = document.getElementById("list");
-                list.innerHTML = "";
-                data.forEach(q => {
-                    const div = document.createElement("div");
-                    div.className = "list-item";
-                    div.innerHTML = '<blockquote>"' + q.text + '"</blockquote>' +
-                        '<div class="char">— ' + q.char + '</div>' +
-                        '<button class="del" onclick="deleteQuote(' + q.id + ')">x</button>';
-                    list.appendChild(div);
-                });
+                allQuotes = await res.json();
+                renderQuotes(allQuotes);
             } catch (e) {
                 document.getElementById("list").textContent = "Could not load quotes.";
             }
@@ -91,6 +86,32 @@
             } catch (e) {
                 alert("Could not delete quote.");
             }
+        }
+
+        function renderQuotes(quotes) {
+            const list = document.getElementById("list");
+            list.innerHTML = "";
+            if (quotes.length === 0) {
+                list.innerHTML = '<div class="list-item">No matches found.</div>';
+                return;
+            }
+            quotes.forEach(q => {
+                const div = document.createElement("div");
+                div.className = "list-item";
+                div.innerHTML = '<blockquote>"' + q.text + '"</blockquote>' +
+                    '<div class="char">-' + q.char + '</div>' +
+                    '<button class="del" onclick="deleteQuote(' + q.id + ')">x</button>';
+                list.appendChild(div);
+            });
+        }
+
+        function filterQuotes() {
+            const term = document.getElementById("search").value.toLowerCase();
+            const filtered = allQuotes.filter(q =>
+                q.text.toLowerCase().includes(term) ||
+                q.char.toLowerCase().includes(term)
+            );
+            renderQuotes(filtered);
         }
 
         getQuote();

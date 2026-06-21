@@ -1,6 +1,6 @@
 # Anime Corner
 
-A small, anime-themed web app running on Docker. nginx serves the static front end and acts as a reverse proxy to a tiny Python API. Quotes are stored in a SQLite database that persists in a Docker volume; on first run the database seeds itself from `quotes.json`. Through the browser you can view a random quote, see the full list, add new quotes, and delete existing ones. Portainer provides a visual dashboard to manage the containers. Built step by step, adding tools slowly.
+A small, anime-themed web app running on Docker. nginx serves the static front end and acts as a reverse proxy to a tiny Python API. Quotes are stored in a SQLite database that persists in a Docker volume; on first run the database seeds itself from `quotes.json`. Through the browser you can view a random quote, browse the full list, search/filter it, add new quotes, and delete existing ones. Portainer provides a visual dashboard to manage the containers. Built step by step, adding tools slowly.
 
 ## Stack
 
@@ -19,7 +19,7 @@ anime-app/
 ├── Dockerfile            # builds the web (nginx) image
 ├── docker-compose.yml    # defines web + api + portainer services
 ├── nginx.conf            # nginx: serves front end + reverse proxy to api
-├── index.html            # page structure (random quote + add form + list)
+├── index.html            # page structure (random quote + add form + search + list)
 ├── style.css             # page styling
 └── api/
     ├── Dockerfile        # builds the API image
@@ -58,6 +58,7 @@ docker compose up -d --build
 The web page lets you:
 - See a random quote and fetch a new one with **New Quote**
 - Add a quote with the **Add a Quote** form
+- Search/filter the list by quote text or character name
 - Delete a quote with the **×** button on each list item
 
 The API is **not** exposed directly to the host — it is only reachable internally through the nginx proxy.
@@ -79,6 +80,10 @@ location /api/ {
 ```
 
 Inside Docker Compose, containers reach each other by service name, so `api` resolves to the API container. The trailing `/` strips the `/api/` prefix, so `/api/quote` reaches the API's `/quote`. This removes the need for CORS and keeps a single public entry point.
+
+## Search / Filter
+
+Search is handled entirely on the front end. The full list is fetched once into a JavaScript array (`allQuotes`); typing in the search box filters that array by quote text or character name (case-insensitive) and re-renders the list. Because nothing is re-fetched, filtering is instant and requires no API or database change. Deleting works on filtered results too, since each item carries its database `id`.
 
 ## Database & Persistence
 
@@ -140,8 +145,6 @@ Returns the full list of quotes, each including its `id`.
 
 Adds a new quote. Body must be JSON with non-empty `text` and `char`.
 
-Request body:
-
 ```json
 { "text": "New quote here", "char": "Character Name" }
 ```
@@ -161,8 +164,9 @@ No curl needed — everything is checkable on the page at http://localhost:8080:
 1. **Read:** the random quote card and the **All Quotes** list both populate on load.
 2. **New random:** click **New Quote** — the top card changes.
 3. **Create:** fill the **Add a Quote** form and click **Add** — "Added!" appears and the quote shows up in the list immediately.
-4. **Persistence:** press **F5** to refresh — added quotes are still there, proving they were saved to the database.
-5. **Delete:** click the **×** on any quote — it disappears, and stays gone after a refresh.
+4. **Search:** type in the search box — the list narrows to matching quotes/characters as you type; clearing it restores the full list; a no-match term shows "No matches found."
+5. **Persistence:** press **F5** to refresh — added quotes are still there, proving they were saved to the database.
+6. **Delete:** click the **×** on any quote — it disappears, and stays gone after a refresh.
 
 You can also watch requests live in **Portainer** → **Containers** → `anime-api` → **Logs** while you use the page. Use **DevTools (F12) → Network** to inspect status codes (`200`, `201`) and confirm `Server: nginx` on responses.
 
@@ -183,6 +187,7 @@ Editing `index.html`, `style.css`, `nginx.conf`, or `api/app.py` requires `docke
 
 - The API uses only the Python standard library, including the built-in `sqlite3` module — no external dependencies.
 - The front end is split into `index.html` (structure) and `style.css` (styling); both are copied into the nginx image.
+- Search/filter runs entirely in the browser against the already-loaded list — no API call per keystroke.
 - The API is exposed to other containers (`expose`) but not published to the host, so it is only reachable through the nginx proxy.
 - `quotes.json` is seed data baked into the API image; it loads into the database only on first run when the table is empty.
 - The database lives in the named volume `quotes_data` and persists independently of the container.
