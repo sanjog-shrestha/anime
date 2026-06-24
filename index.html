@@ -27,6 +27,15 @@
 
     <div class="list" id="list"></div>
 
+    <h2>Characters</h2>
+    <div class="card">
+        <input id="newName" type="text" placeholder="Character name">
+        <input id="newAnime" type="text" placeholder="Anime">
+        <button onclick="addCharacter()">Add Character</button>
+        <div id="charMsg"></div>
+    </div>
+    <div class="list" id="charList"></div>
+
     <script>
         let allQuotes = [];
 
@@ -114,8 +123,57 @@
             renderQuotes(filtered);
         }
 
+        async function getCharacters() {
+            try {
+                const res = await fetch("/api/characters");
+                const data = await res.json();
+                const list = document.getElementById("charList");
+                list.innerHTML = "";
+                data.forEach(c => {
+                    const div = document.createElement("div");
+                    div.className = "list-item";
+                    div.innerHTML = '<blockquote>' + c.name + '</blockquote>' + '<div class="char">' + c.anime + '</div>' + '<button class="del" onclick="deleteCharacter(' + c.id + ')">x</button>';
+                    list.appendChild(div);
+                });
+            } catch (e) {
+                document.getElementById("charList").textContent = "Could not load characters.";
+            }
+        }
+
+        async function addCharacter() {
+            const name = document.getElementById("newName").value.trim();
+            const anime = document.getElementById("newAnime").value.trim();
+            const msg = document.getElementById("charMsg");
+            if (!name || !anime) { msg.textContent = "Please fill in both fields."; return; }
+            try {
+                const res = await fetch("/api/characters", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ name, anime })
+                });
+                if (!res.ok) throw new Error();
+                document.getElementById("newName").value = "";
+                document.getElementById("newAnime").value = "";
+                msg.textContent = "Added!";
+                getCharacters();
+            } catch (e) {
+                msg.textContent = "Could not add character.";
+            }
+        }
+
+        async function deleteCharacter(id) {
+            try {
+                const res = await fetch("/api/characters/" + id, { method: "DELETE" });
+                if (!res.ok) throw new Error();
+                getCharacters();
+            } catch (e) {
+                alert("Could not delete character.");
+            }
+        }
+
         getQuote();
         getAllQuotes();
+        getCharacters();
     </script>
 </body>
 
