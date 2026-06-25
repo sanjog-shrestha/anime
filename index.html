@@ -17,7 +17,7 @@
     <div class="card">
         <h2 style="margin-top: 0">Add a Quote</h2>
         <input id="newText" type="text" placeholder="Quote text">
-        <input id="newChar" type="text" placeholder="Character">
+        <select id="newChar"></select>
         <button onclick="addQuote()">Add</button>
         <div id="addMsg"></div>
     </div>
@@ -62,10 +62,12 @@
 
         async function addQuote() {
             const text = document.getElementById("newText").value.trim();
-            const char = document.getElementById("newChar").value.trim();
+            const select = document.getElementById("newChar");
+            const char = select.options[select.selectedIndex]?.dataset.name || "";
+            const character_id = select.value || null;
             const msg = document.getElementById("addMsg");
             if (!text || !char) {
-                msg.textContent = "Please fill in both fields."
+                msg.textContent = "Please enter text and select a character."
                 return;
             }
             try {
@@ -74,11 +76,11 @@
                     headers: {
                         "Content-Type": "application/json"
                     },
-                    body: JSON.stringify({ text, char })
+                    body: JSON.stringify({ text, char, character_id })
                 });
                 if (!res.ok) throw new Error();
                 document.getElementById("newText").value = "";
-                document.getElementById("newChar").value = "";
+                select.selectedIndex = 0;
                 msg.textContent = "Added!";
                 getAllQuotes();
 
@@ -135,6 +137,7 @@
                     div.innerHTML = '<blockquote>' + c.name + '</blockquote>' + '<div class="char">' + c.anime + '</div>' + '<button class="del" onclick="deleteCharacter(' + c.id + ')">x</button>';
                     list.appendChild(div);
                 });
+                fillCharacterDropdown(data);
             } catch (e) {
                 document.getElementById("charList").textContent = "Could not load characters.";
             }
@@ -169,6 +172,18 @@
             } catch (e) {
                 alert("Could not delete character.");
             }
+        }
+
+        function fillCharacterDropdown(characters) {
+            const select = document.getElementById("newChar");
+            select.innerHTML = '<option value="">Select a character...</option>';
+            characters.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c.id;
+                opt.textContent = c.name;
+                opt.dataset.name = c.name;
+                select.appendChild(opt);
+            });
         }
 
         getQuote();

@@ -19,7 +19,8 @@ def init_db():
         CREATE TABLE IF NOT EXISTS quotes (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             text TEXT NOT NULL,
-            char TEXT NOT NULL
+            char TEXT NOT NULL,
+            character_id INTEGER 
         )
     """)
     conn.commit()
@@ -58,7 +59,7 @@ def init_db():
 
 def fetch_all():
     conn = get_db()
-    rows = conn.execute("SELECT id, text, char FROM quotes").fetchall()
+    rows = conn.execute("SELECT id, text, char, character_id FROM quotes").fetchall()
     conn.close()
     return [dict(r) for r in rows]
 
@@ -97,11 +98,12 @@ class Handler(BaseHTTPRequestHandler):
                 body = json.loads(self.rfile.read(length))
                 text = body.get("text", "").strip()
                 char = body.get("char", "").strip()
+                character_id = body.get("character_id")
                 if not text or not char:
                     self._send_json(400, {"error": "text and char are required"})
                     return
                 conn = get_db()
-                conn.execute("INSERT INTO quotes (text, char) VALUES(?,?)" ,(text, char))
+                conn.execute("INSERT INTO quotes (text, char, character_id) VALUES(?,?, ?)" ,(text, char, character_id))
                 conn.commit()
                 conn.close()
                 self._send_json(201, {"text": text, "char": char})

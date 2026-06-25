@@ -1,6 +1,6 @@
 # Anime Corner
 
-A small, anime-themed web app running on Docker. nginx serves the static front end and acts as a reverse proxy to a tiny Python API. Two content types — **quotes** and **characters** — are stored in a SQLite database that persists in a Docker volume; on first run each table seeds itself from a JSON file. Through the browser you can view a random quote, browse/search/add/delete quotes, and add/delete characters. Portainer provides a visual dashboard to manage the containers. Built step by step, adding tools slowly.
+A small, anime-themed web app running on Docker. nginx serves the static front end and acts as a reverse proxy to a tiny Python API. Two linked content types — **quotes** and **characters** — are stored in a SQLite database that persists in a Docker volume; on first run each table seeds itself from a JSON file. When adding a quote you pick its character from a dropdown, so quotes reference real characters. Portainer provides a visual dashboard to manage the containers. Built step by step, adding tools slowly.
 
 ## Stack
 
@@ -59,7 +59,7 @@ docker compose up -d --build
 
 The web page lets you:
 - See a random quote and fetch a new one with **New Quote**
-- Add a quote, search/filter quotes, and delete a quote with the **×** button
+- Add a quote (selecting its character from a dropdown), search/filter quotes, and delete a quote with the **×** button
 - Add and delete characters (name + anime) in the **Characters** section
 
 The API is **not** exposed directly to the host — it is only reachable internally through the nginx proxy.
@@ -82,12 +82,14 @@ location /api/ {
 
 Inside Docker Compose, containers reach each other by service name, so `api` resolves to the API container. The trailing `/` strips the `/api/` prefix, so `/api/quote` reaches the API's `/quote`. This removes the need for CORS and keeps a single public entry point.
 
-## Content Types
+## Content Types & Relationship
 
-The app now manages two independent data types, each with its own table, routes, and UI section. They follow the same pattern, which is the template for adding more types later.
+The app manages two data types, each with its own table, routes, and UI section, following the same pattern.
 
-- **Quotes** — fields: `id`, `text`, `char`. Seeded from `quotes.json`.
 - **Characters** — fields: `id`, `name`, `anime`. Seeded from `characters.json`.
+- **Quotes** — fields: `id`, `text`, `char`, `character_id`. Seeded from `quotes.json`.
+
+The two are linked: a quote stores a `character_id` pointing to a character. In the UI, the **Add a Quote** form uses a dropdown populated from the characters table, so quotes can only be attached to characters that actually exist. The `char` text field is kept alongside `character_id` for simple display.
 
 ## Search / Filter (quotes)
 
@@ -95,7 +97,7 @@ Search is handled entirely on the front end. The full quote list is fetched once
 
 ## Database & Persistence
 
-Data is stored in a SQLite database at `/data/quotes.db` inside the API container. That path is backed by the named Docker volume `quotes_data`, so the data survives container restarts, recreation, and rebuilds:
+Data is stored in a SQLite database at `/data/quotes.db` inside the API container, backed by the named Docker volume `quotes_data`, so it survives container restarts, recreation, and rebuilds:
 
 ```yaml
 volumes:
@@ -103,6 +105,8 @@ volumes:
 ```
 
 On startup the API runs `init_db()`, which creates the `quotes` and `characters` tables if needed and, for each one only when empty, seeds it from the matching JSON file (baked into the image). After the first seed, the database is the source of truth and the JSON files are no longer read.
+
+> **Note on schema changes:** `CREATE TABLE IF NOT EXISTS` does not modify an existing table. When a column is added (such as `character_id` on quotes), an existing database must be wiped and re-seeded for the new column to take effect.
 
 Check that seeding ran:
 
@@ -120,7 +124,7 @@ python -c "import sqlite3; c=sqlite3.connect('/data/quotes.db'); print(c.execute
 exit
 ```
 
-To start completely fresh (wipe everything and re-seed):
+To start completely fresh (wipe everything and re-seed) — also required after a schema change:
 
 ```bash
 docker compose down
@@ -135,13 +139,13 @@ Each resource is a small CRUD interface.
 ### Quotes
 
 - `GET /api/quote` — one random quote: `{ "text": ..., "char": ... }`
-- `GET /api/quotes` — full list, each item includes `id`
-- `POST /api/quotes` — add a quote; JSON body `{ "text": ..., "char": ... }`; both required; returns `201` (or `400` if missing)
+- `GET /api/quotes` — full list, each item includes `id`, `text`, `char`, `character_id`
+- `POST /api/quotes` — add a quote; JSON body `{ "text": ..., "char": ..., "character_id": ... }`; `text` and `char` required, `character_id` optional; returns `201` (or `400` if missing)
 - `DELETE /api/quotes/{id}` — delete a quote; returns `{"deleted": <id>}`
 
 ### Characters
 
-- `GET /api/characters` — full list, each item includes `id`
+- `GET /api/characters` — full list, each item includes `id`, `name`, `anime`
 - `POST /api/characters` — add a character; JSON body `{ "name": ..., "anime": ... }`; both required; returns `201` (or `400` if missing)
 - `DELETE /api/characters/{id}` — delete a character; returns `{"deleted": <id>}`
 
@@ -153,13 +157,14 @@ No curl needed — everything is checkable on the page at http://localhost:8080:
 
 1. **Read:** the random quote card, the quote list, and the characters list all populate on load.
 2. **New random:** click **New Quote** — the top card changes.
-3. **Create quote:** fill the **Add a Quote** form and click **Add** — "Added!" appears and it shows in the list.
-4. **Search:** type in the search box — the quote list narrows as you type; clearing restores it; a no-match term shows "No matches found."
-5. **Create character:** in the **Characters** section, add a name + anime and click **Add Character** — it appears immediately.
-6. **Persistence:** press **F5** — added quotes and characters are still there, proving they were saved to the database.
-7. **Delete:** click the **×** on any quote or character — it disappears, and stays gone after a refresh.
+3. **Dropdown link:** in the **Add a Quote** form, the character field is a dropdown populated from the characters table; adding a character makes it appear there automatically.
+4. **Create quote:** select a character, type a quote, click **Add** — "Added!" appears and it shows in the list, stored with its `character_id`.
+5. **Search:** type in the search box — the quote list narrows as you type; clearing restores it; a no-match term shows "No matches found."
+6. **Create character:** in the **Characters** section, add a name + anime and click **Add Character** — it appears immediately and in the quote dropdown.
+7. **Persistence:** press **F5** — added quotes and characters are still there.
+8. **Delete:** click the **×** on any quote or character — it disappears, and stays gone after a refresh.
 
-You can also watch requests live in **Portainer** → **Containers** → `anime-api` → **Logs** while you use the page. Use **DevTools (F12) → Network** to inspect status codes (`200`, `201`) and confirm `Server: nginx` on responses.
+Confirm the link is stored via **DevTools (F12) → Network**: a `quotes` response now includes a `character_id` field. You can also watch requests live in **Portainer** → **Containers** → `anime-api` → **Logs**.
 
 ## Common Commands
 
@@ -172,13 +177,13 @@ docker compose restart         # restart all services
 docker compose restart web     # restart a single service
 ```
 
-Editing `index.html`, `style.css`, `nginx.conf`, or `api/app.py` requires `docker compose up -d --build`. Editing the seed JSON files only affects fresh (empty) tables.
+Editing `index.html`, `style.css`, `nginx.conf`, or `api/app.py` requires `docker compose up -d --build`. Editing the seed JSON files only affects fresh (empty) tables. A schema change requires wiping the `quotes_data` volume.
 
 ## Notes
 
 - The API uses only the Python standard library, including the built-in `sqlite3` module — no external dependencies.
 - The front end is split into `index.html` (structure) and `style.css` (styling); both are copied into the nginx image.
-- Quotes and characters are fully independent: separate tables, routes, and UI sections following the same pattern.
+- Quotes reference characters via `character_id`; the Add-a-Quote dropdown enforces selecting an existing character.
 - Search/filter runs entirely in the browser against the already-loaded quote list.
 - The API is exposed to other containers (`expose`) but not published to the host, so it is only reachable through the nginx proxy.
 - Seed JSON files are baked into the API image and load into the database only on first run when the relevant table is empty.
